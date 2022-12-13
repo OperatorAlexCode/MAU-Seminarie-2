@@ -25,7 +25,7 @@ namespace Seminarie_2.GameObjects
         Texture2D Tex;
         Rectangle DestRec;
         Color DrawColor = Color.White;
-        bool UseAdvancedPhysics = true;
+        public bool UseAdvancedPhysics = true;
         public Timer LifeTime;
 
         public Ball(Texture2D tex, float radius, Vector2 pos)

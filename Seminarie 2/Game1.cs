@@ -90,8 +90,9 @@ namespace Seminarie_2
             GraphicsDevice.Clear(BackgroundColor);
 
             SpriteBatch.Begin(SpriteSortMode.FrontToBack, null, Microsoft.Xna.Framework.Graphics.SamplerState.PointWrap);
-            Cannon.Draw(SpriteBatch);
             Car.Draw(SpriteBatch, BallTex);
+            Cannon.Draw(SpriteBatch);
+            
             SpriteBatch.End();
 
             base.Draw(gameTime);

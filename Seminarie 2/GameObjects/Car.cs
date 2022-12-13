@@ -26,6 +26,7 @@ namespace Seminarie_2.GameObjects
         Texture2D Tex;
         Rectangle DestRec;
         Color DrawColor = Color.White;
+        bool DrawCirclePath = true;
 
         public Car(Texture2D tex, Rectangle destRec,Vector2 circleCenter, Vector2 functionOrigin, float circleRadius)
         {
@@ -51,8 +52,9 @@ namespace Seminarie_2.GameObjects
 
         public void Draw(SpriteBatch spriteBatch, Texture2D circle)
         {
+            if (DrawCirclePath)
             spriteBatch.Draw(circle, new((int)(CircleCenter.X - CirclePathRadius), (int)(CircleCenter.Y - CirclePathRadius), (int)CirclePathRadius * 2, (int)CirclePathRadius * 2), null, Color.Green, 0.0f, Vector2.Zero, SpriteEffects.None, 0.6f);
-            spriteBatch.Draw(Tex, DestRec, null, DrawColor, 0, new(Tex.Width / 2, Tex.Height / 2), SpriteEffects.None, 0.6f);
+            spriteBatch.Draw(Tex, DestRec, null, DrawColor,CurrentAngle+ MathF.PI/2, new(Tex.Width / 2, Tex.Height / 2), SpriteEffects.None, 0.6f);
         }
 
         public void MoveAroundCirlce()
@@ -76,8 +78,8 @@ namespace Seminarie_2.GameObjects
 
         void SetDestRec()
         {
-            DestRec.X = (int)Pos.X - DestRec.Width / 2;
-            DestRec.Y = (int)Pos.Y - DestRec.Height / 2;
+            DestRec.X = (int)Pos.X;
+            DestRec.Y = (int)Pos.Y;
         }
     }
 }
