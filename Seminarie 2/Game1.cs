@@ -4,6 +4,8 @@ using Microsoft.Xna.Framework.Input;
 using Seminarie_2.GameObjects;
 using SharpDX.Direct2D1;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using SpriteBatch = Microsoft.Xna.Framework.Graphics.SpriteBatch;
 
 namespace Seminarie_2
@@ -17,20 +19,32 @@ namespace Seminarie_2
         int CannonWidth = 30;
         int CarHeight;
         int CarWidth;
+        int DisplayTimesAmount = 1;
 
         // Textrue2D
         Texture2D BallTex;
         Texture2D CarTex;
+
+        // Bool
+        bool IsKeyPressed;
+        bool PauseGame;
+        bool IsMouseButtonPressed;
+
+        // String
+        string TimeFormat = "{0:00}:{1:00}.{2:000}";
+        List<string> TimeOfCollisions = new List<string>();
+        string ElapsedTime;
 
         // Others
         private GraphicsDeviceManager Graphics;
         private SpriteBatch SpriteBatch;
         Color BackgroundColor = Color.Green;
         Cannon Cannon;
-        
-        bool IsKeyPressed;
         ProgramState CurrentState = 0;
         Car Car;
+        float CirclePathRadius = 100.0f;
+        Stopwatch Timer;
+        SpriteFont GameFont;
 
         public Game1()
         {
@@ -52,14 +66,17 @@ namespace Seminarie_2
 
             SetWindowDimensions();
             InitializeTextures();
+            GameFont = Content.Load<SpriteFont>("File");
 
             CarHeight = CarTex.Height * 4;
             CarWidth = CarTex.Width * 4;
 
             Cannon = CreateCannon();
+            Cannon.SetBallOnCollisionFunction(SavePositions);
             Car = CreateCar();
 
-            // TODO: use this.Content to load your game content here
+            Timer = new();
+            Timer.Start();
         }
 
         protected override void Update(GameTime gameTime)
@@ -69,18 +86,57 @@ namespace Seminarie_2
 
             float deltaTime = (float) gameTime.ElapsedGameTime.TotalSeconds;
 
-            if (Keyboard.GetState().GetPressedKeyCount() == 0)
+            KeyboardState keyboard = Keyboard.GetState();
+            MouseState mouse = Mouse.GetState();
+
+            if (keyboard.GetPressedKeyCount() == 0)
                 IsKeyPressed = false;
 
-            Cannon.Update(deltaTime);
+            if (mouse.LeftButton == ButtonState.Released)
+                IsMouseButtonPressed = false;
 
-            Car.Update(CurrentState);
-
-            if (Keyboard.GetState().IsKeyDown(Keys.Enter) && !IsKeyPressed)
+            if (!IsKeyPressed)
             {
-                Cannon.Shoot();
-                IsKeyPressed = true;
+                if (keyboard.IsKeyDown(Keys.P))
+                {
+                    PauseGame = !PauseGame;
+                    IsKeyPressed = true;
+                }
+
+                if (keyboard.IsKeyDown(Keys.C))
+                    switch (CurrentState)
+                    {
+                        case ProgramState.CirclePath:
+                            CurrentState = ProgramState.FunctionPath;
+                            IsKeyPressed = true;
+                            break;
+                        case ProgramState.FunctionPath:
+                            CurrentState = ProgramState.CirclePath;
+                            IsKeyPressed = true;
+                            break;
+                    }
             }
+
+            if (!PauseGame)
+            {
+                if (!IsMouseButtonPressed)
+                {
+                    if (mouse.LeftButton == ButtonState.Pressed)
+                    {
+                        Cannon.Shoot();
+                        IsMouseButtonPressed = true;
+                    }
+                }
+
+                Cannon.AimAt(mouse.X, mouse.Y);
+
+                Cannon.Update(deltaTime, Car);
+
+                Car.Update(CurrentState);
+            }
+
+            if (PauseGame)
+                Timer.Stop();
 
             base.Update(gameTime);
         }
@@ -92,7 +148,17 @@ namespace Seminarie_2
             SpriteBatch.Begin(SpriteSortMode.FrontToBack, null, Microsoft.Xna.Framework.Graphics.SamplerState.PointWrap);
             Car.Draw(SpriteBatch, BallTex);
             Cannon.Draw(SpriteBatch);
-            
+
+            if (TimeOfCollisions.Count >= 1)
+                for (int x = 1; x <= DisplayTimesAmount; x++)
+                {
+                    if (TimeOfCollisions.Count - x < 0)
+                        continue;
+
+                    SpriteBatch.DrawString(GameFont, TimeOfCollisions[TimeOfCollisions.Count - x], new Vector2(Width - GameFont.MeasureString(TimeOfCollisions[TimeOfCollisions.Count - x]).X, 0), Color.White);
+                }
+                
+
             SpriteBatch.End();
 
             base.Draw(gameTime);
@@ -126,8 +192,14 @@ namespace Seminarie_2
         {
             Rectangle destRec = new(0,0,CarWidth, CarHeight);
 
-            Car newCar = new(CarTex,destRec, new(Width/2,Height/2), new(),100.0f);
+            Car newCar = new(CarTex,destRec, new(Width/2,Height/2), new(0, Height / 2), CirclePathRadius);
+            newCar.SetScreenHeight(Height);
             return newCar;
+        }
+
+        public void SavePositions(Ball ball)
+        {
+            TimeOfCollisions.Add(ElapsedTime + " : BALL" + ball.Pos + " : Car" + Car.Pos);
         }
     }
 }

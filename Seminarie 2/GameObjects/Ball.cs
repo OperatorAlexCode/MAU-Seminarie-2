@@ -11,13 +11,13 @@ namespace Seminarie_2.GameObjects
     public class Ball
     {
         // float
-        float Mass = 0.5f;
+        float Mass = 0.4f;
         float Radius;
-        float DragCoeficient = 0.8f;
+        float DragCoeficient = 0.9f;
         float Gravity = 400.0f;
 
         // Vector2
-        Vector2 Pos;
+        public Vector2 Pos;
         Vector2 Vel;
         Vector2 ObjectForce;
 
@@ -27,6 +27,7 @@ namespace Seminarie_2.GameObjects
         Color DrawColor = Color.White;
         public bool UseAdvancedPhysics = true;
         public Timer LifeTime;
+        Action<Ball> OnCollision;
 
         public Ball(Texture2D tex, float radius, Vector2 pos)
         {
@@ -66,7 +67,7 @@ namespace Seminarie_2.GameObjects
             SetConstants();
         }
 
-        public void Update(float deltaTime)
+        public void Update(float deltaTime, Car car)
         {
             LifeTime.Update(deltaTime);
 
@@ -85,6 +86,12 @@ namespace Seminarie_2.GameObjects
                 Pos += Vel;
 
             UpdateDestRec();
+
+            if (car.GetCollisionVectors().Any(v => Vector2.Distance(Pos, v) <= Radius))
+            {
+                OnCollision.Invoke(this);
+                LifeTime.StartTimer(0);
+            }
         }
 
         public void Draw(SpriteBatch spriteBatch)
@@ -132,6 +139,21 @@ namespace Seminarie_2.GameObjects
         public void SetLifeTime(float lifeTime)
         {
             LifeTime.StartTimer(lifeTime);
+        }
+
+        public void SetVel(float x, float y)
+        {
+            Vel = new(x,y);
+        }
+
+        public void SetVel(Vector2 f)
+        {
+            Vel = f;
+        }
+
+        public void SetCollisionFunction(Action<Ball> function)
+        {
+            OnCollision = function;
         }
     }
 }
